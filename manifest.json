@@ -1,8 +1,8 @@
 {
   "name": "WORDLE Решатель",
   "short_name": "WordleRU",
-  "start_url": "/index.html",
-  "scope": "/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#121213",
   "theme_color": "#6aaa64",
@@ -19,3 +19,4 @@
     }
   ]
 }
+
