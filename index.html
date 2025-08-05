@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORDLE Решатель</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  body { background: #121213; color: white; font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+  #title { font-size: 28px; font-weight: bold; margin-top: 20px; }
+  #suggestion { background: #3a3a3c; padding: 10px; margin: 15px; border-radius: 10px; }
+  #suggestion strong { font-size: 22px; color: #00ff00; margin-left: 5px; }
+  button { margin: 5px; padding: 8px 12px; font-size: 14px; border: none; border-radius: 6px; cursor: pointer; }
+  .green { background: #6aaa64; color: white; }
+  .yellow { background: #c9b458; color: white; }
+  .gray { background: #787c7e; color: white; }
+  #letters button { font-size: 20px; font-weight: bold; width: 50px; height: 50px; }
+  #possible-words { margin-top: 20px; text-align: left; padding: 0 20px; white-space: pre-wrap; }
+  #custom-word-container { margin: 10px; }
+  #custom-word { width: 100px; font-size: 18px; text-transform: uppercase; text-align: center; }
+</style>
+</head>
+<body>
+  <div id="title">WORDLE Решатель</div>
+  <div id="loading">Загрузка словарей...</div>
+  <div id="game" style="display:none;">
+    <div id="suggestion">
+      <span>Рекомендуемое слово:</span>
+      <strong id="word"></strong>
+      <button onclick="copyWord()">📋 Копировать</button>
+      <button onclick="skipWord()">⏭️ Пропустить</button>
+    </div>
+
+    <div id="custom-word-container">
+      <label for="custom-word">Или введите своё слово:</label>
+      <input id="custom-word" maxlength="5" placeholder="ПЯТЬ">
+      <button onclick="useCustomWord()">Использовать</button>
+    </div>
+
+    <div id="letters"></div>
+    <div>
+      <button class="green" onclick="submitFeedback()">✓ Подтвердить</button>
+      <button class="yellow" onclick="markWin()">🎉 Угадано!</button>
+      <button class="gray" onclick="newGame()">🔄 Новая игра</button>
+    </div>
+    <div id="possible-words"></div>
+  </div>
+
+<script src="solver.js"></script>
+<script>
+let currentGuess = "";
+let feedback = ["С","С","С","С","С"];
+
+function renderLetters() {
+  const container = document.getElementById('letters');
+  container.innerHTML = '';
+  if (!currentGuess) return;
+  currentGuess.split('').forEach((letter, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = letter;
+    btn.className = getColorClass(feedback[i]);
+    btn.onclick = () => toggleLetterColor(i);
+    container.appendChild(btn);
+  });
+}
+
+function getColorClass(code) {
+  return code === 'З' ? 'green' : code === 'Ж' ? 'yellow' : 'gray';
+}
+
+function toggleLetterColor(index) {
+  if (feedback[index] === 'С') feedback[index] = 'Ж';
+  else if (feedback[index] === 'Ж') feedback[index] = 'З';
+  else feedback[index] = 'С';
+  renderLetters();
+}
+
+function updatePossibleWords() {
+  const possible = [...window.solver.possibleWords];
+  let text = `Осталось слов: ${possible.length}\n`;
+  if (possible.length <= 50) {
+    text += possible.join(' ');
+  } else {
+    text += '(Слишком много для отображения)';
+  }
+  document.getElementById('possible-words').textContent = text;
+}
+
+function newGame() {
+  window.solver.reset();
+  feedback = ["С","С","С","С","С"];
+  nextGuess();
+}
+
+function nextGuess() {
+  currentGuess = window.solver.getBestGuess(feedback.every(f => f === 'С'));
+  document.getElementById('word').innerText = currentGuess;
+  renderLetters();
+  updatePossibleWords();
+}
+
+function copyWord() {
+  navigator.clipboard.writeText(currentGuess);
+}
+
+function skipWord() {
+  window.solver.possibleWords.delete(currentGuess);
+  nextGuess();
+}
+
+function submitFeedback() {
+  window.solver.processFeedback(currentGuess, feedback.join(''));
+  feedback = ["С","С","С","С","С"];
+  nextGuess();
+}
+
+function markWin() {
+  alert(`Слово угадано: ${currentGuess}`);
+  newGame();
+}
+
+function useCustomWord() {
+  const input = document.getElementById('custom-word');
+  let word = input.value.trim().toUpperCase();
+  const valid = /^[А-ЯЁ]{5}$/u.test(word);
+  if (!valid) {
+    alert("Введите 5 русских букв!");
+    return;
+  }
+  currentGuess = word;
+  feedback = ["С","С","С","С","С"];
+  document.getElementById('word').innerText = currentGuess;
+  renderLetters();
+  input.value = "";
+}
+
+(async () => {
+  while (!window.solver) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  newGame();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(() => console.log('Service Worker registered'))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  });
+}
+</script>
+
+</body>
+</html>
