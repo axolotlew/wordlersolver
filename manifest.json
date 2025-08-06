@@ -1,8 +1,8 @@
 {
-  "name": "WORDLE Решатель",
-  "short_name": "WordleRU",
-  "start_url": "./wordlersolver",
-  "scope": "./",
+  "name": "WORDLR",
+  "short_name": "Wordlr",
+  "start_url": "wordlersolver/",    // ✅ direct path to repo folder
+  "scope": "wordlersolver/",        // ✅ keep within repo folder
   "display": "standalone",
   "background_color": "#121213",
   "theme_color": "#6aaa64",
@@ -19,5 +19,3 @@
     }
   ]
 }
-
-
